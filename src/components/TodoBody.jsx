@@ -111,7 +111,7 @@ const TodoBody = () => {
       {isMobile && (
         <Tabs
           activeTab={activeTab}
-          setActive={setActiveTab}
+          setActiveTab={setActiveTab}
           isMobile={isMobile}
         />
       )}
