@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import {persist} from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 
 const data = [
     {
@@ -36,17 +36,16 @@ const data = [
     }
 ]
 
-let useStore = (set, get) => ({
+let useTodoStore = set => ({
     todos: data,
     activeTodos: 5,
     calculateActiveTodos: () => set(state => ({ activeTodos: state.todos.filter(todo => !todo.completed).length })),
-    // activeTodos:() => set(state => state.todos.filter(todo => !todo.completed).length),
     addTodo: (title) => set(state => ({
         todos: [...state.todos, {
             id: uuidv4().slice(0, 8),
             title,
             completed: false
-        }]
+        }],
     })),
 
     toggleTodo: (id) => set(state => ({
@@ -59,18 +58,18 @@ let useStore = (set, get) => ({
     clearCompleted: () => set(state => ({
         todos: state.todos.filter(todo => !todo.completed)
     })),
-    reorderTodos: (startId, endId) => set(state => {
-        const startIndex = state.todos.findIndex(todo => todo.id === startId)
-        const endIndex = state.todos.findIndex(todo => todo.id === endId)
-        const result = [...state.todos]
-        const [removed] = result.splice(startIndex, 1)
-        result.splice(endIndex, 0, removed)
-        return { todos: result }
+    reorderTodos: (srcID,destID) => set(state => {
+        const copiedItems = [...state.todos]
+        const [removedItem] = copiedItems.splice(srcID, 1);
+        copiedItems.splice(destID, 0, removedItem);
+        return {
+            todos: [...copiedItems]
+        }
     })
 })
 
 
-useStore = persist(useStore, { name: 'todo-app' })
-useStore = create(useStore)
+useTodoStore = persist(useTodoStore, { name: 'todo-app' })
+useTodoStore = create(useTodoStore)
 
-export default useStore;
+export default useTodoStore;

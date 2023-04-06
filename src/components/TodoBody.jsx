@@ -1,7 +1,11 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Delete from "../assets/images/icon-cross.svg";
 import Check from "../assets/images/icon-check.svg";
-import useStore from "../utils/store";
+import useTodoStore from "../utils/store";
+import {useMediaQuery} from "react-responsive";
+import TodoForm from "./TodoForm";
+import Tabs from "./Tabs";
+import {DragDropContext, Draggable, Droppable} from "react-beautiful-dnd";
 
 const TABS = {
   all: "all",
@@ -10,23 +14,22 @@ const TABS = {
 };
 
 const TodoBody = () => {
-  const dragItem = useRef(null)
-  const dragOverItem = useRef(null)
-
+  const isMobile = useMediaQuery({query: "(max-width: 768px)"});
   const [activeTab, setActiveTab] = useState(TABS.all);
-  const activeTodos = useStore((state) => state.activeTodos);
-  const todos = useStore((state) => state.todos);
-  const addTodo = useStore((state) => state.addTodo);
-  const toggleTodo = useStore((state) => state.toggleTodo);
-  const deleteTodo = useStore((state) => state.deleteTodo);
-  const clearCompleted = useStore((state) => state.clearCompleted);
-  const calculateActiveTodos = useStore((state) => state.calculateActiveTodos);
-  const setActiveTabValue = useCallback((tab) => setActiveTab(tab), []);
-  const reorderTodos = useStore((state) => state.reorderTodos);
+
+  const activeTodos = useTodoStore((state) => state.activeTodos);
+  const todos = useTodoStore((state) => state.todos);
+  const toggleTodo = useTodoStore((state) => state.toggleTodo);
+  const deleteTodo = useTodoStore((state) => state.deleteTodo);
+  const clearCompleted = useTodoStore((state) => state.clearCompleted);
+  const calculateActiveTodos = useTodoStore(
+    (state) => state.calculateActiveTodos
+  );
+  const reorderTodos = useTodoStore((state) => state.reorderTodos);
 
   useEffect(() => {
     calculateActiveTodos();
-  },[todos])
+  }, [todos]);
 
   const filteredTodos = useMemo(() => {
     switch (activeTab) {
@@ -37,102 +40,66 @@ const TodoBody = () => {
       default:
         return todos;
     }
-  },[todos,activeTab])
+  }, [todos, activeTab]);
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    const title = e.target.todo.value;
-    if (!title.trim()) return;
-    const capitalizedTitle = title.charAt(0).toUpperCase() + title.slice(1);
-    addTodo(capitalizedTitle)
-    e.target.reset();
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    reorderTodos(result.source.index, result.destination.index);
   };
-
-  const handleDragStart = (e, id) => {
-    dragItem.current = id;
-  }
-
-  const handleDragEnter = (e, id) => {
-    dragOverItem.current = id;
-  }
-  
-  const handleDrop = () => {
-    reorderTodos(dragItem.current, dragOverItem.current)
-    dragItem.current = null;
-    dragOverItem.current = null;
-  }
 
   return (
     <React.Fragment>
-      <form className='todo_form' onSubmit={handleFormSubmit}>
-        <label className='check-circle' htmlFor='todo_form-input'></label>
-        <input
-          id='todo_form-input'
-          type='text'
-          placeholder='Create a new todo...'
-          autoComplete='off'
-          name='todo'
-        />
-      </form>
-
+      <TodoForm />
       <div className='todo_container'>
-        <ul className='todo_list'>
-          {filteredTodos.map((todo) => (
-            <li
-              key={todo.id}
-              className='todo_item'
-              data-complete={todo.completed}
-              draggable
-              onDragStart={(e) => handleDragStart(e, todo.id)}
-              onDragEnter={(e) => handleDragEnter(e, todo.id)}
-              onDragEnd ={handleDrop}>
-              <div
-                className='check-circle'
-                onClick={() => toggleTodo(todo.id)}>
-                {todo.completed && <img src={Check} alt='complete' />}
-              </div>
-              <p className='todo_text'>{todo.title}</p>
-              <button
-                className='delete-btn'
-                aria-label='Delete this todo'
-                onClick={() => deleteTodo(todo.id)}>
-                <img src={Delete} alt='cross' />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <DragDropContext onDragEnd={(result) => onDragEnd(result)}>
+          <Droppable droppableId='todos'>
+            {(provided) => (
+              <ul
+                className='todo_list'
+                {...provided.droppableProps}
+                ref={provided.innerRef}>
+                {filteredTodos.map((todo, index) => (
+                  <Draggable key={todo.id} index={index} draggableId={todo.id}>
+                    {(provided,snapshot) => (
+                      <li
+                        key={todo.id}
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className='todo_item'
+                        data-complete={todo.completed}
+                        data-isdragging={snapshot.isDragging}>
+                        <div
+                          className='check-circle'
+                          onClick={() => toggleTodo(todo.id)}>
+                          {todo.completed && <img src={Check} alt='complete' />}
+                        </div>
+                        <p className='todo_text'>{todo.title}</p>
+                        <button
+                          className='delete-btn'
+                          aria-label='Delete this todo'
+                          onClick={() => deleteTodo(todo.id)}>
+                          <img src={Delete} alt='cross' />
+                        </button>
+                      </li>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </ul>
+            )}
+          </Droppable>
+        </DragDropContext>
 
         <div className='todo_footer'>
           <span>{activeTodos} items left</span>
-          <ul
-            className='todo_tabs hide-on-mobile'
-            aria-label='Select a filter option'
-            data-active={activeTab}>
-            <li>
-              <button
-                className='tab_btn'
-                data-value='all'
-                onClick={() => setActiveTabValue("all")}>
-                All
-              </button>
-            </li>
-            <li>
-              <button
-                className='tab_btn'
-                data-value='active'
-                onClick={() => setActiveTabValue("active")}>
-                Active
-              </button>
-            </li>
-            <li>
-              <button
-                className='tab_btn'
-                data-value='completed'
-                onClick={() => setActiveTabValue("completed")}>
-                Completed
-              </button>
-            </li>
-          </ul>
+          {!isMobile && (
+            <Tabs
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              isMobile={isMobile}
+            />
+          )}
           <button
             className='clear-btn'
             aria-label='Clear all completed todos'
@@ -141,35 +108,13 @@ const TodoBody = () => {
           </button>
         </div>
       </div>
-      <ul
-        className='todo_tabs md'
-        aria-label='Select a filter option'
-        data-active={activeTab}>
-        <li>
-          <button
-            className='tab_btn'
-            data-value='all'
-            onClick={() => setActiveTabValue("all")}>
-            All
-          </button>
-        </li>
-        <li>
-          <button
-            className='tab_btn'
-            data-value='active'
-            onClick={() => setActiveTabValue("active")}>
-            Active
-          </button>
-        </li>
-        <li>
-          <button
-            className='tab_btn'
-            data-value='completed'
-            onClick={() => setActiveTabValue("completed")}>
-            Completed
-          </button>
-        </li>
-      </ul>
+      {isMobile && (
+        <Tabs
+          activeTab={activeTab}
+          setActive={setActiveTab}
+          isMobile={isMobile}
+        />
+      )}
     </React.Fragment>
   );
 };

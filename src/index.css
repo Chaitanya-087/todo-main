@@ -80,7 +80,7 @@ body {
   box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
 }
 
-.check-circle{
+.check-circle {
   width: 20px;
   /* height: 20px; */
   aspect-ratio: 1;
@@ -132,8 +132,8 @@ body {
   border-radius: 25px;
 }
 
-.todo_list>*:not(:last-child) {
-  border-bottom: 1px solid hsl(var(--clr-text) / 0.2);
+.todo_list>* + * {
+  border-top: 1px solid hsl(var(--clr-text) / 0.2);
 }
 
 .todo_item {
@@ -141,8 +141,15 @@ body {
   align-items: center;
   padding: 1rem 1.5rem;
   gap: 1rem;
+  user-select: none;
+  background-color: hsl(var(--clr-element));
 }
-
+.todo_item[data-isdragging = 'true'] {
+  border: none;
+  background-color: hsl(var(--clr-primary));
+  border-radius: 4px;
+  box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+}
 .todo_item:hover .delete-btn {
   display: block;
 }
@@ -223,9 +230,14 @@ body {
   color: hsl(var(--clr-text) / 0.35);
   text-align: center;
 }
+
 .md {
-  display: none;
+  display: flex;
+  background-color: hsl(var(--clr-element));
+  padding: 1.5rem;
+  border-radius: 4px;
 }
+
 @media screen and (width <=768px) {
   main {
     background-image: var(--bg-md-image);
@@ -233,17 +245,6 @@ body {
 
   .delete-btn {
     display: block;
-  }
-
-  .md {
-    display: flex;
-    background-color: hsl(var(--clr-element));
-    padding: 1.5rem;
-    border-radius: 4px;
-  }
-
-  .hide-on-mobile {
-    display: none;
   }
 }
 
