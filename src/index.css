@@ -120,7 +120,7 @@ body {
   width: 100%;
   height: 316px;
   overflow-y: scroll;
-  scroll-behavior: smooth;
+  scroll-behavior: unset !important;
 }
 
 .todo_list::-webkit-scrollbar {
